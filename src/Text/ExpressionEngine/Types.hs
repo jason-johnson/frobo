@@ -28,6 +28,7 @@ data State a =
     | Split (State a) (State a)
     | OpenGroup Tag (State a)
     | CloseGroup Tag (State a)
+    | Accept Tag
     | Final Tag
 
 instance Show a => Show (State a) where
@@ -39,6 +40,7 @@ instance Show a => Show (State a) where
             show' (Split s1 s2) seen = "Split (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
             show' (OpenGroup n s) seen = "OpenGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
             show' (CloseGroup n s) seen = "CloseGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
+            show' (Accept n) _ = "Accept " ++ show n
             show' (Final n) _ = "Final " ++ show n
             showStepStart (Step n m _) = "Step " ++ show n ++ " " ++ show m ++ " "
             showStepStart _ = error "impossible, but shuts up warnings"
@@ -53,6 +55,7 @@ instance Eq a => Eq (State a) where
             eq (Split ls1 ls2) lseen (Split rs1 rs2) rseen = eq ls1 lseen rs1 rseen && eq ls2 lseen rs2 rseen
             eq (OpenGroup _ ls) lseen (OpenGroup _ rs) rseen = eq ls lseen rs rseen
             eq (CloseGroup _ ls) lseen (CloseGroup _ rs) rseen = eq ls lseen rs rseen
+            eq (Accept _) _ (Accept _) _ = True
             eq (Final _) _ (Final _) _ = True
             eq _ _ _ _ = False
 
