@@ -7,6 +7,15 @@ author:         jason
 executable frobo
   hs-source-dirs:  src
   main-is:         Main.hs
-  build-depends:   base >= 4
+  build-depends:   
+                   base >= 4,
+                   containers,
+                   mtl
   ghc-options:     -Wall
+  other-modules:   
+                   Text.ExpressionEngine.DFS,
+                   Text.ExpressionEngine.NFA,
+                   Text.ExpressionEngine.NFA.Matcher,
+                   Text.ExpressionEngine.NFA.Parser,
+                   Text.ExpressionEngine.Types
 
