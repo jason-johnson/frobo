@@ -44,15 +44,18 @@ post2NFA chs = post2NFA' 1 chs []
         patch' Nothing s = Just s
         patch' (Just s) s' = Just $ patch s s'
 
-match str ss = S.runState (runListT $ match' (0 :: Int) str ss) []
+-- NOTE: When we finalize this function, change all the aux match'' entries to just be match'.  They would have been match' but that creates a warning because of the benchmark match' we temporarily define
+match :: Ord a => [a] -> State a -> ([(Int, [Char])], [(Int, Int)])
+match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) []
     where
-        match' sc [] (Final _) = ListT . return $ [(sc, "match successful")]
-        match' _ [] _ = failMatch
---        match' sc [] thing = [(sc, show thing)]
-        match' _ _ (Final _) = failMatch
-        match' sc (c:cs) (Step _ m s) = (if comp c m then toList s else failMatch) >>= match' (sc+1) cs
-        match' sc cs st@(Split _ _) = toList st >>= match' sc cs
-        match' sc cs (OpenGroup t s) = openGroup t sc >> match' sc cs s
+        match'' sc [] (Final _) = ListT . return $ [(sc, "match successful")]
+        match'' _ [] _ = failMatch
+--        match'' sc [] thing = [(sc, show thing)]
+        match'' _ _ (Final _) = failMatch
+        match'' sc (c:cs) (Step _ m s) = (if comp c m then toList s else failMatch) >>= match'' (sc+1) cs
+        match'' sc cs st@(Split _ _) = toList st >>= match'' sc cs
+        match'' sc cs (OpenGroup t s) = openGroup t sc >> match'' sc cs s
+        match'' sc cs (CloseGroup t s) = openGroup t sc >> match'' sc cs s
         comp c (Literal a) = c == a
         comp _ Any = True
         comp c (OneOf s) = c `member` s
@@ -63,6 +66,7 @@ match str ss = S.runState (runListT $ match' (0 :: Int) str ss) []
         openGroup t sc = S.modify $ (\gs -> (t,sc):gs)
         failMatch = ListT . return $ []
 
+match' :: Ord a => [a] -> State a -> [(Int, [Char])]
 match' str ss = match'' (0 :: Int) str ss
     where
         match'' sc [] (Final _) = [(sc, "match successful")]
