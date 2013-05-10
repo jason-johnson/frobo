@@ -1,4 +1,4 @@
-module Text.ExpressionEngine.NFA.Parser
+module Text.ExpressionEngine.NFA.Matcher
 (
   match
 , match'
