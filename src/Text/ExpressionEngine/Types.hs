@@ -12,7 +12,7 @@ data Match a =
     | Literal a
     | OneOf (Set a)
     | NoneOf (Set a)
-    deriving (Show)
+    deriving (Show, Eq)
 
 type Tag = Int  -- needed to print since the structure is cyclic
 
@@ -40,6 +40,19 @@ instance Show a => Show (State a) where
             show' (CloseGroup n s) seen = "CloseGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
             show' (Final n) _ = "Final " ++ show n
             showStepStart (Step n m _) = "Step " ++ show n ++ " " ++ show m ++ " "
+
+instance Eq a => Eq (State a) where
+    l == r = eq l [] r []
+        where
+            eq (Step lt lm ls) lseen (Step rt rm rs) rseen
+                | lt `elem` lseen && rt `elem` rseen = True
+                | lt `elem` lseen || rt `elem` rseen = False
+                | otherwise = lm == rm && eq ls (lt:lseen) rs (rt:rseen)
+            eq (Split ls1 ls2) lseen (Split rs1 rs2) rseen = eq ls1 lseen rs1 rseen && eq ls2 lseen rs2 rseen
+            eq (OpenGroup _ ls) lseen (OpenGroup _ rs) rseen = eq ls lseen rs rseen
+            eq (CloseGroup _ ls) lseen (CloseGroup _ rs) rseen = eq ls lseen rs rseen
+            eq (Final _) _ (Final _) _ = True
+            eq _ _ _ _ = False
 
 data StateS a = Char Tag a (Maybe (StateS a)) | SplitS (Maybe (StateS a)) (Maybe (StateS a)) | MatchS
 
