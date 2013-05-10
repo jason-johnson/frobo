@@ -21,7 +21,7 @@ data State a =
     | Split (State a) (State a)
     | OpenGroup Tag (State a)
     | CloseGroup Tag (State a)
-    | Final
+    | Final Tag
 
 stateAny :: Tag -> State a -> State a
 stateAny tag st = Step tag Any st
@@ -38,7 +38,7 @@ instance Show a => Show (State a) where
             show' (Split s1 s2) seen = "Split (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
             show' (OpenGroup n s) seen = "OpenGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
             show' (CloseGroup n s) seen = "CloseGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
-            show' Final _ = "Final"
+            show' (Final n) _ = "Final " ++ show n
             showStepStart (Step n m _) = "Step " ++ show n ++ " " ++ show m ++ " "
 
 data StateS a = Char Tag a (Maybe (StateS a)) | SplitS (Maybe (StateS a)) (Maybe (StateS a)) | MatchS
@@ -89,9 +89,9 @@ post2NFA chs = post2NFA' 1 chs []
 
 match str ss = match' str ss
     where
-        match' [] Final = ["match successful"]
+        match' [] (Final _) = ["match successful"]
         match' [] _ = []
-        match' _ Final = []
+        match' _ (Final _) = []
         match' (c:cs) (Step _ m s) = (if comp c m then toList s else []) >>= match' cs
         match' cs st@(Split _ _) = toList st >>= match' cs
         comp c (Literal a) = c == a
