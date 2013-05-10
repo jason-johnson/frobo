@@ -16,7 +16,7 @@ data Match a =
     | NoneOf (Set a)
     deriving (Show, Eq)
 
-type Tag = Int  -- needed to print since the structure is cyclic
+type Tag = Int  -- needed to print/compare since the structure is cyclic
 
 data State a =
       Step Tag (Match a) (State a)
