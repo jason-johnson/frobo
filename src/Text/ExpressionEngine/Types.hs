@@ -26,12 +26,6 @@ data State a =
     | CloseGroup Tag (State a)
     | Final Tag
 
-stateAny :: Tag -> State a -> State a
-stateAny tag st = Step tag Any st
-
-stateLiteral :: Tag -> a -> State a -> State a
-stateLiteral tag a st = Step tag (Literal a) st
-
 instance Show a => Show (State a) where
     show nfa = show' nfa []
         where
@@ -71,3 +65,11 @@ instance Show a => Show (StateS a) where
             show' _ _ = error "something that should be impossible seems to have happened"
             showCharStart (Char n a _) = "Char " ++ show n ++ " " ++ show a ++ " "
             showCharStart _ = error "impossible, but shuts up warnings"
+
+-- smart constructors
+
+stateAny :: Tag -> State a -> State a
+stateAny tag st = Step tag Any st
+
+stateLiteral :: Tag -> a -> State a -> State a
+stateLiteral tag a st = Step tag (Literal a) st
