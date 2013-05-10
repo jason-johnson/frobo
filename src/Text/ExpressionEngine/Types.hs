@@ -5,8 +5,41 @@ module Text.ExpressionEngine.Types
 )
 where
 
+import Data.Set (Set)
+
+data Match a =
+      Any
+    | Literal a
+    | OneOf (Set a)
+    | NoneOf (Set a)
+    deriving (Show)
 
 type Tag = Int  -- needed to print since the structure is cyclic
+
+data State a =
+      Step Tag (Match a) (State a)
+    | Split (State a) (State a)
+    | OpenGroup (State a)
+    | CloseGroup (State a)
+    | Final
+
+stateAny :: Tag -> State a -> State a
+stateAny tag st = Step tag Any st
+
+stateLiteral :: Tag -> a -> State a -> State a
+stateLiteral tag a st = Step tag (Literal a) st
+
+instance Show a => Show (State a) where
+    show nfa = show' nfa []
+        where
+            show' st@(Step n m s) seen
+                | n `elem` seen = showStepStart st ++ "##"
+                | otherwise = showStepStart st ++ "(" ++ show' s (n : seen) ++ ")"
+            show' (Split s1 s2) seen = "Split (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
+            show' (OpenGroup s) seen = "OpenGroup (" ++ show' s seen ++ ")"
+            show' (CloseGroup s) seen = "CloseGroup (" ++ show' s seen ++ ")"
+            show' Final _ = "Final"
+            showStepStart (Step n m _) = "Step " ++ show n ++ " " ++ show m ++ " "
 
 data StateS a = Char Tag a (Maybe (StateS a)) | SplitS (Maybe (StateS a)) (Maybe (StateS a)) | MatchS
 
@@ -53,3 +86,15 @@ post2NFA chs = post2NFA' 1 chs []
         patch MatchS _ = error "malformed postfix"
         patch' Nothing s = Just s
         patch' (Just s) s' = Just $ patch s s'
+
+match str ss = match' str ss
+    where
+        match' [] Final = ["match successful"]
+        match' [] _ = []
+        match' _ Final = []
+        match' (c:cs) (Step _ m s) = (if comp c m then toList s else []) >>= match' cs
+        match' cs st@(Split _ _) = toList st >>= match' cs
+        comp c (Literal a) = c == a
+        comp _ Any = True
+        toList (Split s1 s2) = toList s1 ++ toList s2
+        toList st = [st]
