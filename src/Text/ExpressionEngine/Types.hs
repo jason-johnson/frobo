@@ -6,6 +6,8 @@ module Text.ExpressionEngine.Types
 where
 
 import Data.Set (Set)
+import qualified Control.Monad.State as S
+import Control.Monad.List (ListT(..))
 
 data Match a =
       Any
@@ -100,13 +102,33 @@ post2NFA chs = post2NFA' 1 chs []
         patch' Nothing s = Just s
         patch' (Just s) s' = Just $ patch s s'
 
-match str ss = match' str ss
+match str ss = S.runState (runListT $ match' (0 :: Int) str ss) []
     where
-        match' [] (Final _) = ["match successful"]
-        match' [] _ = []
-        match' _ (Final _) = []
-        match' (c:cs) (Step _ m s) = (if comp c m then toList s else []) >>= match' cs
-        match' cs st@(Split _ _) = toList st >>= match' cs
+        match' sc [] (Final _) = ListT . return $ [(sc, "match successful")]
+        match' _ [] _ = failMatch
+--        match' sc [] thing = [(sc, show thing)]
+        match' _ _ (Final _) = failMatch
+        match' sc (c:cs) (Step _ m s) = (if comp c m then toList s else failMatch) >>= match' (sc+1) cs
+        match' sc cs st@(Split _ _) = toList st >>= match' sc cs
+        match' sc cs (OpenGroup t s) = openGroup t sc >> match' sc cs s
+        comp c (Literal a) = c == a
+        comp _ Any = True
+        toList st = ListT . return $ toList' st
+        toList' (Split s1 s2) = toList' s1 ++ toList' s2
+        toList' st = [st]
+        openGroup t sc = S.modify $ (\gs -> (t,sc):gs)
+        failMatch = ListT . return $ []
+
+match' str ss = match'' (0 :: Int) str ss
+    where
+        match'' sc [] (Final _) = [(sc, "match successful")]
+        match'' _ [] _ = []
+--        match'' sc [] thing = [(sc, show thing)]
+        match'' _ _ (Final _) = []
+        match'' sc (c:cs) (Step _ m s) = (if comp c m then toList s else []) >>= match'' (sc+1) cs
+        match'' sc cs st@(Split _ _) = toList st >>= match'' sc cs
+        match'' sc cs (OpenGroup _ s) = match'' sc cs s
+        match'' sc cs (CloseGroup _ s) = match'' sc cs s
         comp c (Literal a) = c == a
         comp _ Any = True
         toList (Split s1 s2) = toList s1 ++ toList s2
