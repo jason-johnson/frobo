@@ -35,7 +35,7 @@ stateLiteral tag a st = Step tag (Literal a) st
 instance Show a => Show (State a) where
     show nfa = show' nfa []
         where
-            show' st@(Step n m s) seen
+            show' st@(Step n _ s) seen
                 | n `elem` seen = showStepStart st ++ "##"
                 | otherwise = showStepStart st ++ "(" ++ show' s (n : seen) ++ ")"
             show' (Split s1 s2) seen = "Split (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
@@ -43,6 +43,7 @@ instance Show a => Show (State a) where
             show' (CloseGroup n s) seen = "CloseGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
             show' (Final n) _ = "Final " ++ show n
             showStepStart (Step n m _) = "Step " ++ show n ++ " " ++ show m ++ " "
+            showStepStart _ = error "impossible, but shuts up warnings"
 
 instance Eq a => Eq (State a) where
     l == r = eq l [] r []
@@ -62,9 +63,11 @@ data StateS a = Char Tag a (Maybe (StateS a)) | SplitS (Maybe (StateS a)) (Maybe
 instance Show a => Show (StateS a) where
     show nfa = show' nfa []
         where
-            show' st@(Char n a (Just s)) seen
+            show' st@(Char n _ (Just s)) seen
                 | n `elem` seen = showCharStart st ++ "##"
                 | otherwise = showCharStart st ++ "(" ++ show' s (n : seen) ++ ")"
             show' (SplitS (Just s1) (Just s2)) seen = "SplitS (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
             show' MatchS _ = "MatchS"
+            show' _ _ = error "something that should be impossible seems to have happened"
             showCharStart (Char n a _) = "Char " ++ show n ++ " " ++ show a ++ " "
+            showCharStart _ = error "impossible, but shuts up warnings"
