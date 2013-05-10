@@ -4,11 +4,15 @@ module Text.ExpressionEngine.Types
 , Match(..)
 , stateAny
 , stateLiteral
+, stateOneOf
+, stateOneOf'
+, stateNoneOf
+, stateNoneOf'
 , StateS(..)
 )
 where
 
-import Data.Set (Set)
+import Data.Set (Set, fromList)
 
 data Match a =
       Any
@@ -73,3 +77,15 @@ stateAny tag st = Step tag Any st
 
 stateLiteral :: Tag -> a -> State a -> State a
 stateLiteral tag a st = Step tag (Literal a) st
+
+stateOneOf :: Tag -> Set a -> State a -> State a
+stateOneOf tag set st = Step tag (OneOf set) st
+
+stateOneOf' :: Ord a => Tag -> [a] -> State a -> State a
+stateOneOf' tag as st = Step tag (OneOf . fromList $ as) st
+
+stateNoneOf :: Tag -> Set a -> State a -> State a
+stateNoneOf tag set st = Step tag (NoneOf set) st
+
+stateNoneOf' :: Ord a => Tag -> [a] -> State a -> State a
+stateNoneOf' tag as st = Step tag (NoneOf . fromList $ as) st
