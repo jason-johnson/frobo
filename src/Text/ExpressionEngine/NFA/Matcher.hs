@@ -8,6 +8,7 @@ where
 import qualified Control.Monad.State as S
 import Control.Monad.List (ListT(..))
 import Text.ExpressionEngine.Types
+import Data.Set (member, notMember)
 
 post2NFA :: [Char] -> StateS Char
 post2NFA chs = post2NFA' 1 chs []
@@ -54,6 +55,8 @@ match str ss = S.runState (runListT $ match' (0 :: Int) str ss) []
         match' sc cs (OpenGroup t s) = openGroup t sc >> match' sc cs s
         comp c (Literal a) = c == a
         comp _ Any = True
+        comp c (OneOf s) = c `member` s
+        comp c (NoneOf s) = c `notMember` s
         toList st = ListT . return $ toList' st
         toList' (Split s1 s2) = toList' s1 ++ toList' s2
         toList' st = [st]
@@ -72,5 +75,7 @@ match' str ss = match'' (0 :: Int) str ss
         match'' sc cs (CloseGroup _ s) = match'' sc cs s
         comp c (Literal a) = c == a
         comp _ Any = True
+        comp c (OneOf s) = c `member` s
+        comp c (NoneOf s) = c `notMember` s
         toList (Split s1 s2) = toList s1 ++ toList s2
         toList st = [st]
