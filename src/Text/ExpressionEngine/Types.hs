@@ -19,8 +19,8 @@ type Tag = Int  -- needed to print since the structure is cyclic
 data State a =
       Step Tag (Match a) (State a)
     | Split (State a) (State a)
-    | OpenGroup (State a)
-    | CloseGroup (State a)
+    | OpenGroup Tag (State a)
+    | CloseGroup Tag (State a)
     | Final
 
 stateAny :: Tag -> State a -> State a
@@ -36,8 +36,8 @@ instance Show a => Show (State a) where
                 | n `elem` seen = showStepStart st ++ "##"
                 | otherwise = showStepStart st ++ "(" ++ show' s (n : seen) ++ ")"
             show' (Split s1 s2) seen = "Split (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
-            show' (OpenGroup s) seen = "OpenGroup (" ++ show' s seen ++ ")"
-            show' (CloseGroup s) seen = "CloseGroup (" ++ show' s seen ++ ")"
+            show' (OpenGroup n s) seen = "OpenGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
+            show' (CloseGroup n s) seen = "CloseGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
             show' Final _ = "Final"
             showStepStart (Step n m _) = "Step " ++ show n ++ " " ++ show m ++ " "
 
