@@ -1,7 +1,6 @@
 module Text.ExpressionEngine.NFA.Parser
 (
   parseExpression
-, parseExpression'
 )
 where
 
@@ -47,8 +46,6 @@ p_splitBy1 p sep = do
 p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
 
-parseExpression e = runParser p 1 e e
-    where p = p_regex <* eof
 
 p_regex :: ExpParser (T.State Char -> T.State Char)
 p_regex = do
