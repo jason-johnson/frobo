@@ -39,6 +39,11 @@ p_many1 p = do
     f <- p
     (p_many1 p >>= return . (f .)) <|> return f
 
+p_splitBy1 :: ExpParser (T.State Char -> T.State Char) -> Parsec String ParserState Char -> ExpParser (T.State Char -> T.State Char)
+p_splitBy1 p sep = do
+    f <- p
+    (sep >> p_splitBy1 p sep >>= return . (\f' e -> Split (f e) (f' e))) <|> return f
+
 p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
 
