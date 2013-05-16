@@ -36,8 +36,8 @@ step_index = do
 
 p_many1 :: ExpParser (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
 p_many1 p = do
-    xf <- p
-    (p_many1 p >>= return . (xf .)) <|> return xf
+    f <- p
+    (p_many1 p >>= return . (f .)) <|> return f
 
 p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
