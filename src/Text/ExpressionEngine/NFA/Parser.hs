@@ -24,7 +24,7 @@ parseExpression e = case runParser p 1 e e of
     where
 --        p = p_rec_many p_char $ p_end 1
         p = do
-            pat <- p_many1 p_char
+            pat <- p_regex
             end <- p_end 1
             return $ pat end
 
@@ -50,11 +50,11 @@ p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
 parseExpression e = runParser p 1 e e
     where p = p_regex <* eof
 
+p_regex :: ExpParser (T.State Char -> T.State Char)
 p_regex = do
-    branches <- sepBy1 p_branch (char '|')
-    return branches
+    p_splitBy1 p_branch (char '|')
 
-p_branch = many1 p_piece
+p_branch = p_many1 p_piece
 
 --p_piece = (p_anchor <|> p_atom)
 p_piece = p_char
