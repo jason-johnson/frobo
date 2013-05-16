@@ -16,7 +16,7 @@ type ExpParserS a = ExpParser (T.State a)
 
 newtype Promise a = Promise { resolvePromise :: (T.State a -> T.State a) }
 
-parseExpression :: String -> T.State a
+parseExpression :: String -> T.State Char
 parseExpression e = case runParser p 1 e e of
         Left err -> error $ show err
         Right r -> r
