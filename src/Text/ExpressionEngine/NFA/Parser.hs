@@ -22,7 +22,11 @@ parseExpression e = case runParser p 1 e e of
         Left err -> error $ show err
         Right r -> r
     where
-        p = p_rec_many p_char $ p_end 1
+--        p = p_rec_many p_char $ p_end 1
+        p = do
+            pat <- p_many1 p_char
+            end <- p_end 1
+            return $ pat end
 
 step_index :: ExpParser Int
 step_index = do
@@ -30,13 +34,12 @@ step_index = do
   updateState succ
   return index
 
-p_rec_many :: ExpParser (T.State a -> T.State a) -> ExpParserS a -> ExpParserS a
-p_rec_many p e = many'
-    where
-        many' = p_some <|> e
-        p_some = p <*> many'
+p_many1 :: ExpParser (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
+p_many1 p = do
+    xf <- p
+    (p_many1 p >>= return . (xf .)) <|> return xf
 
-p_end :: Int -> ExpParserS a
+p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
 
 parseExpression e = runParser p 1 e e
@@ -51,6 +54,7 @@ p_branch = many1 p_piece
 --p_piece = (p_anchor <|> p_atom)
 p_piece = p_char
 
+p_char :: ExpParser (T.State Char -> T.State Char)
 p_char = do
     c <- p_dot <|> p_literal <?> "character"
     i <- step_index
