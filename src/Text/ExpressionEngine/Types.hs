@@ -35,7 +35,7 @@ instance Show a => Show (State a) where
     show nfa = show' nfa []
         where
             show' st@(Step n _ s) seen
-                | n `elem` seen = showStepStart st ++ "##"
+                | n `elem` seen = showStepStart st ++ "..."
                 | otherwise = showStepStart st ++ "(" ++ show' s (n : seen) ++ ")"
             show' (Split s1 s2) seen = "Split (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
             show' (OpenGroup n s) seen = "OpenGroup " ++ show n ++ " (" ++ show' s seen ++ ")"
