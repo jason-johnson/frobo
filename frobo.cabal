@@ -10,6 +10,7 @@ executable frobo
   build-depends:   
                    base >= 4,
                    containers,
+                   parsec,
                    mtl
   ghc-options:     -Wall
   other-modules:   
