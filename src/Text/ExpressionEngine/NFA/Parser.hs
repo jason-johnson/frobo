@@ -14,7 +14,6 @@ type ParserState = (Int, Int)
 type ExpParser = Parsec String ParserState
 type ExpParserS a = ExpParser (T.State a)
 
-newtype Promise a = Promise { resolvePromise :: (T.State a -> T.State a) }
 
 parseExpression :: String -> T.State Char
 parseExpression e = case runParser p (1, 1) e e of
