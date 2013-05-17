@@ -57,14 +57,20 @@ p_regex :: ExpParser (T.State Char -> T.State Char)
 p_regex = do
     p_splitBy1 p_branch (char '|')
 
+p_branch :: ExpParser (T.State Char -> T.State Char)
 p_branch = p_many1 p_piece
 
+p_piece :: ExpParser (T.State Char -> T.State Char)
 p_piece = p_atom >>= p_post_atom
 
+p_atom :: ExpParser (T.State Char -> T.State Char)
 p_atom =  p_group <|> p_char <?> "atom"
+
+p_post_atom :: (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
 p_post_atom atom = --(char '?' >> return (PQuest atom))
                return atom
 
+p_group :: ExpParser (T.State Char -> T.State Char)
 p_group = lookAhead (char '(') >> do
   index <- group_index
   re <- between (char '(') (char ')') p_regex
