@@ -10,14 +10,14 @@ import qualified Data.Set as S(fromList)
 import Text.ExpressionEngine.Types
 import qualified Text.ExpressionEngine.Types as T
 
-type ParserState = Int
+type ParserState = (Int, Int)
 type ExpParser = Parsec String ParserState
 type ExpParserS a = ExpParser (T.State a)
 
 newtype Promise a = Promise { resolvePromise :: (T.State a -> T.State a) }
 
 parseExpression :: String -> T.State Char
-parseExpression e = case runParser p 1 e e of
+parseExpression e = case runParser p (1, 1) e e of
         Left err -> error $ show err
         Right r -> r
     where
@@ -29,8 +29,14 @@ parseExpression e = case runParser p 1 e e of
 
 step_index :: ExpParser Int
 step_index = do
-  index <- getState
-  updateState succ
+  (index, _) <- getState
+  updateState $ \(i,gi) -> (succ i, gi)
+  return index
+
+group_index :: ExpParser Int
+group_index = do
+  (_, index) <- getState
+  updateState $ \(si,gi) -> (si, succ gi)
   return index
 
 p_many1 :: ExpParser (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
