@@ -59,8 +59,16 @@ p_regex = do
 
 p_branch = p_many1 p_piece
 
---p_piece = (p_anchor <|> p_atom)
-p_piece = p_char
+p_piece = p_atom >>= p_post_atom
+
+p_atom =  p_group <|> p_char <?> "atom"
+p_post_atom atom = --(char '?' >> return (PQuest atom))
+               return atom
+
+p_group = lookAhead (char '(') >> do
+  index <- group_index
+  re <- between (char '(') (char ')') p_regex
+  return $ OpenGroup index . re . CloseGroup index
 
 p_char :: ExpParser (T.State Char -> T.State Char)
 p_char = do
