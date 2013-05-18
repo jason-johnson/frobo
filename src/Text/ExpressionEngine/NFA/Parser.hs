@@ -7,6 +7,7 @@ where
 import           Control.Applicative
 import           Text.Parsec         hiding (many, optional, (<|>))
 import qualified Data.Set as S(fromList)
+import Data.Set (Set)
 import Text.ExpressionEngine.Types
 import qualified Text.ExpressionEngine.Types as T
 
@@ -63,7 +64,7 @@ p_piece :: ExpParser (T.State Char -> T.State Char)
 p_piece = p_atom >>= p_post_atom
 
 p_atom :: ExpParser (T.State Char -> T.State Char)
-p_atom =  p_group <|> p_char <?> "atom"
+p_atom =  p_group <|> p_bracket <|> p_char <?> "atom"
 
 p_post_atom :: (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
 p_post_atom atom = --(char '?' >> return (PQuest atom))
@@ -75,6 +76,15 @@ p_group = lookAhead (char '(') >> do
   re <- between (char '(') (char ')') p_regex
   return $ OpenGroup index . re . CloseGroup index
 
+p_bracket :: ExpParser (T.State Char -> T.State Char)
+p_bracket = do
+    match <- char '[' *> (p_noneOf <|> p_oneOf)
+    i <- step_index
+    return $ Step i match
+    where
+        p_noneOf = NoneOf <$> (char '^' *> p_set)
+        p_oneOf = OneOf <$> p_set
+
 p_char :: ExpParser (T.State Char -> T.State Char)
 p_char = do
     c <- p_dot <|> p_literal <?> "character"
@@ -85,7 +95,20 @@ p_char = do
         p_literal = Literal <$> noneOf specials
         specials = "^.[$()|*+?{\\"
 
+p_set :: ExpParser (Set Char)
+p_set = do
+    l <- option [] ((:[]) <$> char ']')
+    elems <- (if length l == 1 then many p_elem else many1 p_elem) <* char ']'
+    return . S.fromList . concat $ l : elems
+    where
+        p_elem = p_elem_range <|> p_elem_char <?> "bracket expression"
+        p_elem_range = try $ enumFromTo <$> normal <*> end
+        p_elem_char = (:[]) <$> (endDash <|> endCarrot <|> normal)
+        normal = noneOf specials
+        end = char '-' *> noneOf specials
+        endDash = char '-' <* lookAhead (char ']')
+        endCarrot = char '^' <* lookAhead (option ' ' (char '-') *> char ']')
+        specials = "]-^"
+
 a :: Integer
 a = 1
-b :: Integer
-b = 2
