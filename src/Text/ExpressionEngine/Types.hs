@@ -8,7 +8,6 @@ module Text.ExpressionEngine.Types
 , stateOneOf'
 , stateNoneOf
 , stateNoneOf'
-, StateS(..)
 )
 where
 
@@ -58,20 +57,6 @@ instance Eq a => Eq (State a) where
             eq (Accept _) _ (Accept _) _ = True
             eq (Final _) _ (Final _) _ = True
             eq _ _ _ _ = False
-
-data StateS a = Char Tag a (Maybe (StateS a)) | SplitS (Maybe (StateS a)) (Maybe (StateS a)) | MatchS
-
-instance Show a => Show (StateS a) where
-    show nfa = show' nfa []
-        where
-            show' st@(Char n _ (Just s)) seen
-                | n `elem` seen = showCharStart st ++ "##"
-                | otherwise = showCharStart st ++ "(" ++ show' s (n : seen) ++ ")"
-            show' (SplitS (Just s1) (Just s2)) seen = "SplitS (" ++ show' s1 seen ++ ") (" ++ show' s2 seen ++ ")"
-            show' MatchS _ = "MatchS"
-            show' _ _ = error "something that should be impossible seems to have happened"
-            showCharStart (Char n a _) = "Char " ++ show n ++ " " ++ show a ++ " "
-            showCharStart _ = error "impossible, but shuts up warnings"
 
 -- smart constructors
 

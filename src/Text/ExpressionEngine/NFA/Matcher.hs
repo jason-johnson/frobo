@@ -10,40 +10,6 @@ import Control.Monad.List (ListT(..))
 import Text.ExpressionEngine.Types
 import Data.Set (member, notMember)
 
-post2NFA :: [Char] -> StateS Char
-post2NFA chs = post2NFA' 1 chs []
-    where
-        post2NFA' n (c:cs) stack = case c of
-            '.' -> post2NFA' n cs $ doDot stack
-            '|' -> post2NFA' n cs $ doOr stack
-            '?' -> post2NFA' n cs $ doQ stack
-            '*' -> post2NFA' n cs $ doStar stack
-            '+' -> post2NFA' n cs $ doPlus stack
-            _ -> post2NFA' (n+1) cs (Char n c Nothing : stack)
-        post2NFA' _ [] [nfa] = patch nfa MatchS
-        post2NFA' _ _ _ = error "malformed"
-        doDot (b:a:stack) = patch a b : stack
-        doDot _ = error "malformed postfix"
-        doOr (b:a:stack) = SplitS (Just a) (Just b) : stack
-        doOr _ = error "malformed"
-        doQ (a:stack) = SplitS (Just a) Nothing : stack
-        doQ _ = error "malformed"
-        doStar (a:stack) = let
-            s = SplitS (Just $ patch a s) Nothing
-            in s : stack
-        doStar _ = error "malformed"
-        doPlus (a:stack) = let
-            s = SplitS (Just s') Nothing
-            s' = patch a s
-            in s' : stack
-        doPlus _ = error "malformed"
-        patch (Char n c Nothing) s = Char n c (Just s)
-        patch (Char n c (Just s)) s' = Char n c $ Just $ patch s s'
-        patch (SplitS a b) s = SplitS (patch' a s) (patch' b s)
-        patch MatchS _ = error "malformed postfix"
-        patch' Nothing s = Just s
-        patch' (Just s) s' = Just $ patch s s'
-
 -- NOTE: When we finalize this function, change all the aux match'' entries to just be match'.  They would have been match' but that creates a warning because of the benchmark match' we temporarily define
 match :: Ord a => [a] -> State a -> ([(Int, [Char])], ([(Int, Int)], [(Int, Int, Int)], [State a]))
 match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) ([], [], [])
