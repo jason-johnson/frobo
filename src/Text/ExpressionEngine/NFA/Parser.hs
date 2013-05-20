@@ -119,6 +119,3 @@ p_set = do
         endCarrot = char '^' <* lookAhead (option unused (char '-') *> char ']')
         specials = "]-^"
         unused = ' '
-
-a :: Integer
-a = 1
