@@ -3,7 +3,6 @@ module Text.ExpressionEngine.NFA
   match
 , match'
 , parseExpression
-, parseExpression'
 )
 where
 
