@@ -109,8 +109,9 @@ p_set = do
         normal = noneOf specials
         end = char '-' *> noneOf specials
         endDash = char '-' <* lookAhead (char ']')
-        endCarrot = char '^' <* lookAhead (option ' ' (char '-') *> char ']')
+        endCarrot = char '^' <* lookAhead (option unused (char '-') *> char ']')
         specials = "]-^"
+        unused = ' '
 
 a :: Integer
 a = 1
