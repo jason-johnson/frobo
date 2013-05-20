@@ -21,7 +21,6 @@ parseExpression e = case runParser p (1, 1) e e of
         Left err -> error $ show err
         Right r -> r
     where
---        p = p_rec_many p_char $ p_end 1
         p = do
             pat <- p_regex
             end <- p_end 1
