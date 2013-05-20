@@ -87,12 +87,14 @@ p_bracket = do
 
 p_char :: ExpParser (T.State Char -> T.State Char)
 p_char = do
-    c <- p_dot <|> p_literal <?> "character"
+    c <- p_dot <|> p_left_curly <|> p_escaped <|> p_literal <?> "character"
     i <- step_index
     return $ Step i c
     where
         p_dot = Any <$ char '.'
         p_literal = Literal <$> noneOf specials
+        p_escaped = Literal <$> (char '\\' *> anyChar)
+        p_left_curly = try $ Literal <$> (char '{' <* notFollowedBy digit)
         specials = "^.[$()|*+?{\\"
 
 p_set :: ExpParser (Set Char)
