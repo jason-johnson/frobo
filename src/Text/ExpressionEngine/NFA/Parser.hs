@@ -67,8 +67,11 @@ p_atom :: ExpParser (T.State Char -> T.State Char)
 p_atom =  p_group <|> p_bracket <|> p_char <?> "atom"
 
 p_post_atom :: (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
-p_post_atom atom = --(char '?' >> return (PQuest atom))
-               return atom
+p_post_atom atom =
+        (char '*' *> return star)
+    <|> return atom
+    where
+        star e = let (sp, a) = (Split a e, atom sp) in sp
 
 p_group :: ExpParser (T.State Char -> T.State Char)
 p_group = lookAhead (char '(') >> do
