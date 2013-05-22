@@ -11,12 +11,23 @@ accept :: (b, (c, d, [State a])) -> Bool
 accept (_,(_,_,[Accept _])) = True
 accept _ = False
 
+accepts :: (b, (c, d, [State a])) -> Bool
+accepts (_,(_,_,(Accept _:_))) = True
+accepts _ = False
+
 final :: (b, (c, d, [State a])) -> Bool
 final (_,(_,_,[Final _])) = True
 final _ = False
 
+finals :: (b, (c, d, [State a])) -> Bool
+finals (_,(_,_,(Final _:_))) = True
+finals _ = False
+
 passes :: (b, (c, d, [State a])) -> Bool
 passes s = accept s || final s
+
+passess :: (b, (c, d, [State a])) -> Bool
+passess s = accepts s || finals s
 
 test_concat = do assertBool (accept $ match "abcdef" expr)
     where expr = parseExpression "^abcdef"
