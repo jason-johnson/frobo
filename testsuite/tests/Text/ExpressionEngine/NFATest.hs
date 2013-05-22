@@ -32,6 +32,8 @@ passess s = accepts s || finals s
 test_concat = do assertBool (accept $ match "abcdef" expr)
     where expr = parseExpression "^abcdef"
 
+-- anchors
+
 test_noCarrot = do
     assertBool (finals $ match "ab" expr)
     assertBool (finals $ match "aab" expr)
@@ -45,6 +47,20 @@ test_carrot = do
     assertBool (not $ passess $ match "?+.XZr Zab" expr)
     assertBool (not $ passess $ match "abc" expr)
     where expr = parseExpression "^ab$"
+
+test_noDollar = do
+    assertBool (accept $ match "abc" expr)
+    assertBool (accept $ match "abcd" expr)
+    assertBool (accept $ match "abcdef" expr)
+    assertBool (not $ passes $ match "abdc" expr)
+    where expr = parseExpression "^abc"
+
+test_dollar = do
+    assertBool (final $ match "abc" expr)
+    assertBool (not $ passes $ match "abcd" expr)
+    assertBool (not $ passes $ match "abcdef" expr)
+    assertBool (not $ passes $ match "abdc" expr)
+    where expr = parseExpression "^abc$"
 
 -- operators
 
@@ -75,20 +91,6 @@ test_question = do
     assertBool (accept $ match "ad" expr)
     assertBool (not $ passes $ match "aad" expr)
     where expr = parseExpression "^a?d"
-
-test_noDollar = do
-    assertBool (accept $ match "abc" expr)
-    assertBool (accept $ match "abcd" expr)
-    assertBool (accept $ match "abcdef" expr)
-    assertBool (not $ passes $ match "abdc" expr)
-    where expr = parseExpression "^abc"
-
-test_dollar = do
-    assertBool (final $ match "abc" expr)
-    assertBool (not $ passes $ match "abcd" expr)
-    assertBool (not $ passes $ match "abcdef" expr)
-    assertBool (not $ passes $ match "abdc" expr)
-    where expr = parseExpression "^abc$"
 
 test_group = do
     assertBool (accept $ match "abcd" expr)
