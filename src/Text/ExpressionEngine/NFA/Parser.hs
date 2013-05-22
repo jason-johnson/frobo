@@ -13,7 +13,6 @@ import qualified Text.ExpressionEngine.Types as T
 
 type ParserState = (Int, Int)
 type ExpParser = Parsec String ParserState
-type ExpParserS a = ExpParser (T.State a)
 
 parseExpression :: String -> T.State Char
 parseExpression e = case runParser p (1, 1) e e of
@@ -25,6 +24,8 @@ parseExpression e = case runParser p (1, 1) e e of
             pat <- p_regex
             end <- p_end 1
             return . start . pat $ end
+
+-- state handling
 
 step_index :: ExpParser Int
 step_index = do
@@ -38,6 +39,8 @@ group_index = do
   updateState $ \(si,gi) -> (si, succ gi)
   return index
 
+-- combinators
+
 p_many1 :: ExpParser (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
 p_many1 p = do
     f <- p
@@ -48,6 +51,8 @@ p_splitBy1 p sep = do
     f <- p
     (sep >> p_splitBy1 p sep >>= return . (\f' e -> Split (f e) (f' e))) <|> return f
 
+-- anchors
+
 p_start :: ExpParser (T.State Char -> T.State Char)
 p_start = option skipStar (id <$ char '^')
     where
@@ -55,6 +60,8 @@ p_start = option skipStar (id <$ char '^')
 
 p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
+
+-- actual grammars
 
 p_regex :: ExpParser (T.State Char -> T.State Char)
 p_regex = do
