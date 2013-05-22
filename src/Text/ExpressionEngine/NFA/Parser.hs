@@ -22,9 +22,10 @@ parseExpression e = case runParser p (1, 1) e e of
         Right r -> r
     where
         p = do
+            start <- p_start
             pat <- p_regex
             end <- p_end 1
-            return $ pat end
+            return . start . pat $ end
 
 step_index :: ExpParser Int
 step_index = do
@@ -47,6 +48,11 @@ p_splitBy1 :: ExpParser (T.State Char -> T.State Char) -> Parsec String ParserSt
 p_splitBy1 p sep = do
     f <- p
     (sep >> p_splitBy1 p sep >>= return . (\f' e -> Split (f e) (f' e))) <|> return f
+
+p_start :: ExpParser (T.State Char -> T.State Char)
+p_start = option skipStar (id <$ char '^')
+    where
+        skipStar e = let (sp, a) = (Split a e, Step 0 Any sp) in sp
 
 p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
