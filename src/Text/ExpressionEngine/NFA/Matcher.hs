@@ -32,14 +32,14 @@ match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) (M.empty, M.emp
     where
         match'' sc [] st@(Final _) = ListT $ recordWin st >> return [(sc, "match successful")]
         match'' sc [] st@(Accept _) = ListT $ recordWin st >> return [(sc, "match successful")]
+        match'' sc cs st@(Split _ _) = toList st >>= match'' sc cs
+        match'' sc cs (OpenGroup t s) = openGroup t sc >> match'' sc cs s
+        match'' sc cs (CloseGroup t s) = closeGroup t sc >> match'' sc cs s
         match'' _ [] _ = failMatch
 --        match'' sc [] thing = [(sc, show thing)]
         match'' _ _ (Final _) = failMatch
         match'' _ _ st@(Accept _) = recordWin st >> failMatch
         match'' sc (c:cs) (Step _ m s) = (if comp c m then toList s else failMatch) >>= match'' (sc+1) cs
-        match'' sc cs st@(Split _ _) = toList st >>= match'' sc cs
-        match'' sc cs (OpenGroup t s) = openGroup t sc >> match'' sc cs s
-        match'' sc cs (CloseGroup t s) = closeGroup t sc >> match'' sc cs s
         comp c (Literal a) = c == a
         comp _ Any = True
         comp c (OneOf s) = c `member` s
