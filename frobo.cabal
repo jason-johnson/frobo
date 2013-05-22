@@ -20,3 +20,21 @@ executable frobo
                    Text.ExpressionEngine.NFA.Parser,
                    Text.ExpressionEngine.Types
 
+test-suite frobo-test
+  type:            exitcode-stdio-1.0
+  main-is:         frobo-test.hs
+  ghc-options:     -Wall -rtsopts
+  build-depends:   base >= 4, HTF > 0.9
+  other-modules:   
+                  Text.ExpressionEngine.NFA,
+                  Text.ExpressionEngine.NFATest,
+                  Text.ExpressionEngine.NFA.Parser,
+                  Text.ExpressionEngine.NFA.ParserTest,
+                  Text.ExpressionEngine.NFA.Matcher,
+                  Text.ExpressionEngine.NFA.MatcherTest,
+                  Text.ExpressionEngine.Types,
+                  Text.ExpressionEngine.TypesTest
+  hs-source-dirs:  
+                  testsuite/tests,
+                  src
+
