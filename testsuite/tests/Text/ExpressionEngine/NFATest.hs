@@ -32,6 +32,12 @@ passes s = accept s || final s
 
 passess s = accepts s || finals s
 
+groupResult t (_, (_,gm,_)) = fmap (\(s,e,_) -> (s,e)) . M.lookup t $ gm
+
+groupMatch t gr st = maybe False (gr ==) $ groupResult t st
+
+noGroupResult t st = groupResult t st == Nothing
+
 test_concat = do assertBool (accept $ match "abcdef" expr)
     where expr = parseExpression "^abcdef"
 
@@ -154,3 +160,12 @@ test_negRange = do
     assertBool (accept $ match "adc" expr)
     assertBool (accept $ match "a^c" expr)
     where expr = parseExpression "^a[^ab-]c"
+
+-- group capture
+
+test_simpleCapture = do
+    assertBool (groupMatch 1 (1,7) $ match "abcxybcd" expr)
+    assertBool (groupMatch 1 (1,5) $ match "abcxyd" expr)
+    assertBool (groupMatch 1 (1,3) $ match "abcd" expr)
+    assertBool (noGroupResult 1 $ match "ad" expr)
+    where expr = parseExpression "^a(bc|xy)*d"
