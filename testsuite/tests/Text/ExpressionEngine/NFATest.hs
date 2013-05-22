@@ -32,6 +32,20 @@ passess s = accepts s || finals s
 test_concat = do assertBool (accept $ match "abcdef" expr)
     where expr = parseExpression "^abcdef"
 
+test_noCarrot = do
+    assertBool (finals $ match "ab" expr)
+    assertBool (finals $ match "aab" expr)
+    assertBool (finals $ match "?+.XZr Zab" expr)
+    assertBool (not $ passess $ match "abc" expr)
+    where expr = parseExpression "ab$"
+
+test_carrot = do
+    assertBool (finals $ match "ab" expr)
+    assertBool (not $ passess $ match "aab" expr)
+    assertBool (not $ passess $ match "?+.XZr Zab" expr)
+    assertBool (not $ passess $ match "abc" expr)
+    where expr = parseExpression "^ab$"
+
 -- operators
 
 test_or = do
