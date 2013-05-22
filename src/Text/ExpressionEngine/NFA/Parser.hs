@@ -15,7 +15,6 @@ type ParserState = (Int, Int)
 type ExpParser = Parsec String ParserState
 type ExpParserS a = ExpParser (T.State a)
 
-
 parseExpression :: String -> T.State Char
 parseExpression e = case runParser p (1, 1) e e of
         Left err -> error $ show err
@@ -56,7 +55,6 @@ p_start = option skipStar (id <$ char '^')
 
 p_end :: Int -> ExpParser (T.State Char)
 p_end n = (Final n <$ char '$') <|> (Accept n <$ eof)
-
 
 p_regex :: ExpParser (T.State Char -> T.State Char)
 p_regex = do
