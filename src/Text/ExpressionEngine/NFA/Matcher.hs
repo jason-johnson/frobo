@@ -9,10 +9,26 @@ import qualified Control.Monad.State as S
 import Control.Monad.List (ListT(..))
 import Text.ExpressionEngine.Types
 import Data.Set (member, notMember)
+import Data.Map (Map, (!))
+import qualified Data.Map as M (empty, insertWith)
+
+type Tag = Int
+
+type Result a = (State a, Int)
+type Results a = Map Tag (Result a)
+
+type Start = Int
+type End = Int
+
+type GroupResult = (Start, End, [End])
+type GroupResults = Map Tag GroupResult
+
+type GroupStart = (Start, [Start])
+type GroupStarts = Map Tag GroupStart
 
 -- NOTE: When we finalize this function, change all the aux match'' entries to just be match'.  They would have been match' but that creates a warning because of the benchmark match' we temporarily define
-match :: Ord a => [a] -> State a -> ([(Int, [Char])], ([(Int, Int)], [(Int, Int, Int)], [State a]))
-match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) ([], [], [])
+match :: Ord a => [a] -> State a -> ([(Int, [Char])], (GroupStarts, GroupResults, Results a))
+match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) (M.empty, M.empty, M.empty)
     where
         match'' sc [] st@(Final _) = ListT $ recordWin st >> return [(sc, "match successful")]
         match'' sc [] st@(Accept _) = ListT $ recordWin st >> return [(sc, "match successful")]
@@ -31,10 +47,15 @@ match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) ([], [], [])
         toList st = ListT . return $ toList' st
         toList' (Split s1 s2) = toList' s1 ++ toList' s2
         toList' st = [st]
-        openGroup t sc = S.modify $ (\(ogs, gs, rs) -> (((t,sc):ogs), gs, rs))
-        closeGroup t ec = S.modify $ (\(ogs, gs, rs) -> (ogs, closeGroup' t ec ogs ++ gs, rs))
-        closeGroup' t ec ogs = (filter (< ec) . map snd . filter ((t ==) . fst) $ ogs) >>= (\sc -> [(t,sc,ec)])
-        recordWin st = S.modify $ (\(ogs, gs, rs) -> (ogs, gs, st:rs))
+        openGroup t sc = S.modify $ (\(ogm, gm, rm) -> (openGroup' t sc ogm, gm, rm))
+        openGroup' t sc ogm = M.insertWith (\_ (sc', scs) -> (min sc sc', sc:scs)) t (sc, [sc]) ogm
+        closeGroup t ec = S.modify $ (\(ogm, gm, rs) -> (ogm, closeGroup' t ec ogm gm, rs))
+        closeGroup' t ec ogm gm = M.insertWith (\_ (sc, ec', ecs) -> (sc, max ec ec', ec : ecs)) t (fst (ogm ! t), ec, [ec]) gm
+        recordWin st = S.modify $ (\(ogs, gs, rm) -> (ogs, gs, recordWin' st (resultTag st) rm))
+        recordWin' st t rm = M.insertWith (\_ (_, c) -> (st, succ c)) t (st, 1) rm
+        resultTag (Accept n) = n
+        resultTag (Final n) = n
+        resultTag _ = error "resultTag called on non-result"
         failMatch = ListT . return $ []
 
 match' :: Ord a => [a] -> State a -> [(Int, [Char])]
