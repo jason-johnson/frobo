@@ -3,30 +3,33 @@ module Text.ExpressionEngine.NFATest where
 import Text.ExpressionEngine.NFA
 
 import Text.ExpressionEngine.Types
-
+import qualified Data.Map as M (lookup)
 
 import Test.Framework
 
-accept :: (b, (c, d, [State a])) -> Bool
-accept (_,(_,_,[Accept _])) = True
+accept' :: Int -> Maybe ((State a), Int) -> Bool
+accept' 0 (Just (Accept _, n)) = n > 1
+accept' n (Just (Accept _, n')) = n == n'
+accept' _ _ = False
+
+accept (_,(_,_,rm)) = accept' 1 (M.lookup 1 rm)
 accept _ = False
 
-accepts :: (b, (c, d, [State a])) -> Bool
-accepts (_,(_,_,(Accept _:_))) = True
+accepts (_,(_,_,rm)) = accept' 0 (M.lookup 1 rm)
 accepts _ = False
 
-final :: (b, (c, d, [State a])) -> Bool
-final (_,(_,_,[Final _])) = True
+final' 0 (Just (Final _, n)) = n > 1
+final' n (Just (Final _, n')) = n == n'
+final' _ _ = False
+
+final (_,(_,_,rm)) = final' 1 (M.lookup 1 rm)
 final _ = False
 
-finals :: (b, (c, d, [State a])) -> Bool
-finals (_,(_,_,(Final _:_))) = True
+finals (_,(_,_,rm)) = final' 0 (M.lookup 1 rm)
 finals _ = False
 
-passes :: (b, (c, d, [State a])) -> Bool
 passes s = accept s || final s
 
-passess :: (b, (c, d, [State a])) -> Bool
 passess s = accepts s || finals s
 
 test_concat = do assertBool (accept $ match "abcdef" expr)
@@ -35,17 +38,17 @@ test_concat = do assertBool (accept $ match "abcdef" expr)
 -- anchors
 
 test_noCarrot = do
-    assertBool (finals $ match "ab" expr)
-    assertBool (finals $ match "aab" expr)
-    assertBool (finals $ match "?+.XZr Zab" expr)
-    assertBool (not $ passess $ match "abc" expr)
+    assertBool (final $ match "ab" expr)
+    assertBool (final $ match "aab" expr)
+    assertBool (final $ match "?+.XZr Zab" expr)
+    assertBool (not $ passes $ match "abc" expr)
     where expr = parseExpression "ab$"
 
 test_carrot = do
-    assertBool (finals $ match "ab" expr)
-    assertBool (not $ passess $ match "aab" expr)
-    assertBool (not $ passess $ match "?+.XZr Zab" expr)
-    assertBool (not $ passess $ match "abc" expr)
+    assertBool (final $ match "ab" expr)
+    assertBool (not $ passes $ match "aab" expr)
+    assertBool (not $ passes $ match "?+.XZr Zab" expr)
+    assertBool (not $ passes $ match "abc" expr)
     where expr = parseExpression "^ab$"
 
 test_noDollar = do
