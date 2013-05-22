@@ -53,8 +53,8 @@ match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) (M.empty, M.emp
         closeGroup' t ec ogm gm = M.insertWith (\_ (sc, ec', ecs) -> (sc, max ec ec', ec : ecs)) t (fst (ogm ! t), ec, [ec]) gm
         recordWin st = S.modify $ (\(ogs, gs, rm) -> (ogs, gs, recordWin' st (resultTag st) rm))
         recordWin' st t rm = M.insertWith (\_ (_, c) -> (st, succ c)) t (st, 1) rm
-        resultTag (Accept n) = n
-        resultTag (Final n) = n
+        resultTag (Accept t) = t
+        resultTag (Final t) = t
         resultTag _ = error "resultTag called on non-result"
         failMatch = ListT . return $ []
 
