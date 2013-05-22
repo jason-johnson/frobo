@@ -27,7 +27,7 @@ type GroupStart = (Start, [Start])
 type GroupStarts = Map Tag GroupStart
 
 -- NOTE: When we finalize this function, change all the aux match'' entries to just be match'.  They would have been match' but that creates a warning because of the benchmark match' we temporarily define
-match :: Ord a => [a] -> State a -> ([(Int, [Char])], (GroupStarts, GroupResults, Results a))
+match :: (Ord a, Show a) => [a] -> State a -> ([(Int, [Char])], (GroupStarts, GroupResults, Results a))
 match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) (M.empty, M.empty, M.empty)
     where
         match'' sc [] st@(Final _) = ListT $ recordWin st >> return [(sc, "match successful")]
@@ -36,7 +36,7 @@ match str ss = S.runState (runListT $ match'' (0 :: Int) str ss) (M.empty, M.emp
         match'' sc cs (OpenGroup t s) = openGroup t sc >> match'' sc cs s
         match'' sc cs (CloseGroup t s) = closeGroup t sc >> match'' sc cs s
         match'' _ [] _ = failMatch
---        match'' sc [] thing = [(sc, show thing)]
+--        match'' sc [] thing = ListT . return $ [(sc, show thing)]
         match'' _ _ (Final _) = failMatch
         match'' _ _ st@(Accept _) = recordWin st >> failMatch
         match'' sc (c:cs) (Step _ m s) = (if comp c m then toList s else failMatch) >>= match'' (sc+1) cs
