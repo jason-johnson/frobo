@@ -163,6 +163,22 @@ test_negRange = do
 
 -- group capture
 
+test_starInside = do
+    assertBool (accept $ match "abd" expr)
+    assertBool (accept $ match "abcd" expr)
+    assertBool (accept $ match "abccd" expr)
+    assertBool (not $ passes $ match "ad" expr)
+    assertBool (not $ passes $ match "acd" expr)
+    where expr = parseExpression "^a(bc*)d"
+
+test_starOutside = do
+    assertBool (accept $ match "ad" expr)
+    assertBool (accept $ match "abcd" expr)
+    assertBool (accept $ match "abcbcd" expr)
+    assertBool (not $ passes $ match "abd" expr)
+    assertBool (not $ passes $ match "acd" expr)
+    where expr = parseExpression "^a(bc)*d"
+
 test_simpleCapture = do
     assertBool (groupMatch 1 (1,7) $ match "abcxybcd" expr)
     assertBool (groupMatch 1 (1,5) $ match "abcxyd" expr)
