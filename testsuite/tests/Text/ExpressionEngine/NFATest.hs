@@ -7,37 +7,39 @@ import qualified Data.Map as M (lookup)
 
 import Test.Framework
 
-accept' :: Maybe ((State a), Int) -> Bool
-accept' (Just (Accept _, n)) = if n > 1 then error "actually got a state accepted multiple times" else True
-accept' _ = False
+accept' :: Int -> Maybe ((State a), Int) -> Bool
+accept' 0 (Just (Accept _, n)) = n > 1
+accept' n (Just (Accept _, n')) = n == n'
+accept' _ _ = False
 
-accept [(_,(_,_,rm))] = accept' (M.lookup 1 rm)
+accept (_,rm) = accept' 1 (M.lookup 1 rm)
 accept _ = False
 
-accepts ((_,(_,_,rm)):_) = accept' (M.lookup 1 rm)
+accepts (_,rm) = accept' 0 (M.lookup 1 rm)
 accepts _ = False
 
-final' :: Maybe ((State a), Int) -> Bool
-final' (Just (Final _, n)) = if n > 1 then error "actually got a state final multiple times" else True
-final' _ = False
+final' :: Int -> Maybe ((State a), Int) -> Bool
+final' 0 (Just (Final _, n)) = n > 1
+final' n (Just (Final _, n')) = n == n'
+final' _ _ = False
 
-final [(_,(_,_,rm))] = final' (M.lookup 1 rm)
+final (_,rm) = final' 1 (M.lookup 1 rm)
 final _ = False
 
-finals ((_,(_,_,rm)):_) = final' (M.lookup 1 rm)
+finals (_,rm) = final' 0 (M.lookup 1 rm)
 finals _ = False
 
 passes s = accept s || final s
 
 passess s = accepts s || finals s
 
-groupResult t (_, (_,gm,_)) = fmap (\(s,e,_) -> (s,e)) . M.lookup t $ gm
+groupResult t (_, (_,gm)) = fmap (\(s,e,_) -> (s,e)) . M.lookup t $ gm
 
-groupMatch t gr = any f
+groupMatch t gr = any f . fst
     where
         f st = maybe False (gr ==) $ groupResult t st
 
-noGroupResult t = all f
+noGroupResult t = all f . fst
     where
         f st = groupResult t st == Nothing
 
