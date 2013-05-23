@@ -7,25 +7,24 @@ import qualified Data.Map as M (lookup)
 
 import Test.Framework
 
-accept' :: Int -> Maybe ((State a), Int) -> Bool
-accept' 0 (Just (Accept _, n)) = n > 1
-accept' n (Just (Accept _, n')) = n == n'
-accept' _ _ = False
+accept' :: Maybe ((State a), Int) -> Bool
+accept' (Just (Accept _, n)) = if n > 1 then error "actually got a state accepted multiple times" else True
+accept' _ = False
 
-accept (_,(_,_,rm)) = accept' 1 (M.lookup 1 rm)
+accept [(_,(_,_,rm))] = accept' (M.lookup 1 rm)
 accept _ = False
 
-accepts (_,(_,_,rm)) = accept' 0 (M.lookup 1 rm)
+accepts ((_,(_,_,rm)):_) = accept' (M.lookup 1 rm)
 accepts _ = False
 
-final' 0 (Just (Final _, n)) = n > 1
-final' n (Just (Final _, n')) = n == n'
-final' _ _ = False
+final' :: Maybe ((State a), Int) -> Bool
+final' (Just (Final _, n)) = if n > 1 then error "actually got a state final multiple times" else True
+final' _ = False
 
-final (_,(_,_,rm)) = final' 1 (M.lookup 1 rm)
+final [(_,(_,_,rm))] = final' (M.lookup 1 rm)
 final _ = False
 
-finals (_,(_,_,rm)) = final' 0 (M.lookup 1 rm)
+finals ((_,(_,_,rm)):_) = final' (M.lookup 1 rm)
 finals _ = False
 
 passes s = accept s || final s
@@ -34,9 +33,13 @@ passess s = accepts s || finals s
 
 groupResult t (_, (_,gm,_)) = fmap (\(s,e,_) -> (s,e)) . M.lookup t $ gm
 
-groupMatch t gr st = maybe False (gr ==) $ groupResult t st
+groupMatch t gr = any f
+    where
+        f st = maybe False (gr ==) $ groupResult t st
 
-noGroupResult t st = groupResult t st == Nothing
+noGroupResult t = all f
+    where
+        f st = groupResult t st == Nothing
 
 test_concat = do assertBool (accept $ match "abcdef" expr)
     where expr = parseExpression "^abcdef"
@@ -57,6 +60,7 @@ test_carrot = do
     assertBool (not $ passes $ match "abc" expr)
     where expr = parseExpression "^ab$"
 
+-- TODO: Make this test pass again.  It will require switching the mater to be:  StateT ListT State, with the inside state (visible to all traversals) receiving only the successes (probably with the group info that goes with it)
 test_noDollar = do
     assertBool (accept $ match "abc" expr)
     assertBool (accept $ match "abcd" expr)
