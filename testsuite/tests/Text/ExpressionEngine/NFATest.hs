@@ -189,3 +189,18 @@ test_simpleCapture = do
     assertBool (groupMatch 1 (1,3) $ match "abcd" expr)
     assertBool (noGroupResult 1 $ match "ad" expr)
     where expr = parseExpression "^a(bc|xy)*d"
+
+test_lateCapture = do
+    assertBool (groupMatch 1 (0,2) $ match "aee" expr)
+    assertBool (groupMatch 1 (2,4) $ match "aebee" expr)
+    assertBool (groupMatch 1 (4,6) $ match "aebebee" expr)
+    assertBool (noGroupResult 1 $ match "ae" expr)
+    assertBool (noGroupResult 1 $ match "be" expr)
+    where expr = parseExpression "(ae|be)e$"
+
+test_longCapture = do
+    assertBool (groupMatch 1 (1,2) $ match "aaa" expr)
+    assertBool (groupMatch 1 (1,3) $ match "aaaa" expr)
+    assertBool (groupMatch 1 (1,4) $ match "aaaaa" expr)
+    assertBool (noGroupResult 1 $ match "aa" expr)
+    where expr = parseExpression "^a(a)*a+$"                -- NOTE: There is currently a bug that if the star were inside the grouping we would get a bogus (1,1) group match.
