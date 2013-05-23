@@ -58,7 +58,7 @@ match str ss = S.runState (runListT $ S.runStateT (match'' (0 :: Int) str ss) (M
         resultTag (Final t) = t
         resultTag _ = error "resultTag called on non-result"
         failMatch = return' []
-        return' = S.lift
+        return' = S.lift . ListT . return
 
 match' :: Ord a => [a] -> State a -> [(Int, [Char])]
 match' str ss = match'' (0 :: Int) str ss
