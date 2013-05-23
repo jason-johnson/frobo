@@ -35,7 +35,7 @@ match str ss = S.runStateT (match'' (0 :: Int) str ss) (M.empty, M.empty, M.empt
         match'' sc cs (OpenGroup t s) = openGroup t sc >> match'' sc cs s
         match'' sc cs (CloseGroup t s) = closeGroup t sc >> match'' sc cs s
         match'' _ [] _ = failMatch
---        match'' sc [] thing = return $ [(sc, show thing)]
+--        match'' sc [] thing = return' [(sc, show thing)]
         match'' _ _ (Final _) = failMatch
         match'' _ _ st@(Accept _) = recordWin st >> failMatch
         match'' sc (c:cs) (Step _ m s) = (if comp c m then toList s else failMatch) >>= match'' (sc+1) cs
@@ -43,7 +43,7 @@ match str ss = S.runStateT (match'' (0 :: Int) str ss) (M.empty, M.empty, M.empt
         comp _ Any = True
         comp c (OneOf s) = c `member` s
         comp c (NoneOf s) = c `notMember` s
-        toList = S.lift . toList'
+        toList = return' . toList'
         toList' (Split s1 s2) = toList' s1 ++ toList' s2
         toList' st = [st]
         openGroup t sc = S.modify $ (\(ogm, gm, rm) -> (openGroup' t sc ogm, gm, rm))
@@ -56,7 +56,8 @@ match str ss = S.runStateT (match'' (0 :: Int) str ss) (M.empty, M.empty, M.empt
         resultTag (Accept t) = t
         resultTag (Final t) = t
         resultTag _ = error "resultTag called on non-result"
-        failMatch = S.lift []
+        failMatch = return' []
+        return' = S.lift
 
 match' :: Ord a => [a] -> State a -> [(Int, [Char])]
 match' str ss = match'' (0 :: Int) str ss
