@@ -71,10 +71,10 @@ p_branch :: ExpParser (T.State Char -> T.State Char)
 p_branch = p_many1 p_piece
 
 p_piece :: ExpParser (T.State Char -> T.State Char)
-p_piece = p_atom >>= p_post_atom
+p_piece = p_group <|> (p_atom >>= p_post_atom)
 
 p_atom :: ExpParser (T.State Char -> T.State Char)
-p_atom =  p_group <|> p_bracket <|> p_char <?> "atom"
+p_atom =  p_bracket <|> p_char <?> "atom"
 
 p_post_atom :: (T.State Char -> T.State Char) -> ExpParser (T.State Char -> T.State Char)
 p_post_atom atom =
@@ -90,8 +90,8 @@ p_post_atom atom =
 p_group :: ExpParser (T.State Char -> T.State Char)
 p_group = lookAhead (char '(') >> do
   index <- group_index
-  re <- between (char '(') (char ')') p_regex
-  return $ OpenGroup index . re . CloseGroup index
+  re <- between (char '(') (char ')') p_regex >>= p_post_atom . (OpenGroup index .)
+  return $ re . CloseGroup index
 
 p_bracket :: ExpParser (T.State Char -> T.State Char)
 p_bracket = do
