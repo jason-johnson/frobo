@@ -9,16 +9,19 @@ import qualified Control.Monad.State as S
 import Text.ExpressionEngine.Types
 import Data.Set (member, notMember)
 import Data.Map (Map)
-import qualified Data.Map as M (empty, insertWith, lookup)
+import qualified Data.Map as M (empty, insertWith, lookup, map, unionWith)
 import Control.Monad.List (ListT(..))
 
 type Tag = Int
 
-type Result a = (State a, Int)
-type Results a = Map Tag (Result a)
-
 type Start = Int
 type End = Int
+
+type GroupFinalResult = (Start, End)
+type GroupFinalResults = Map Tag GroupFinalResult
+
+type Result a = (State a, Int, GroupFinalResults)
+type Results a = Map Tag (Result a)
 
 type GroupResult = (Start, End, [End])
 type GroupResults = Map Tag GroupResult
@@ -52,8 +55,9 @@ match str ss = S.runState (runListT $ S.runStateT (match'' (0 :: Int) str ss) (M
         closeGroup t ec = S.modify $ (\(ogm, gm) -> (ogm, closeGroup' t ec (M.lookup t ogm) gm))
         closeGroup' t ec (Just og) gm = M.insertWith (\_ (sc, ec', ecs) -> (sc, max ec ec', ec : ecs)) t (fst og, ec, [ec]) gm
         closeGroup' _ _ Nothing gm = gm
-        recordWin st = S.lift . S.modify $ \rm -> recordWin' st (resultTag st) rm
-        recordWin' st t rm = M.insertWith (\_ (_, c) -> (st, succ c)) t (st, 1) rm
+        recordWin st = S.get >>= \(_,gs) -> S.lift . S.modify $ \rm -> recordWin' st (resultTag st) gs rm
+        recordWin' st t gs rm = M.insertWith (\(_,_,gfs) (_, c, gfs') -> (st, succ c, M.unionWith takeBiggest gfs gfs')) t (st, 1, M.map (\(s,e,_) -> (s,e)) gs) rm
+        takeBiggest n@(s,e) o@(s',e') = if (e-s) > (e'-s') then n else o
         resultTag (Accept t) = t
         resultTag (Final t) = t
         resultTag _ = error "resultTag called on non-result"
